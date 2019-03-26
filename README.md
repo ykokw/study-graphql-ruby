@@ -77,16 +77,16 @@ http://localhost:3000/graphiql で GraphiQL のコンソールが開くので、
 }
 ```
 
-## Object Type の追加
+## Type の追加と、Query Resolver の設定
 
-#### User モデルを作成し、rake db:migrate を流す。
+#### 1. User モデルを作成し、rake db:migrate を流す。
 
 ```
 $ rails g model User first_name:string last_name:string email:string
 $ rake db:migrate
 ```
 
-#### Queryでデータを取得できる事を確認するため、 rails console を使用して事前にデータを作成。
+#### 2. Queryでデータを取得できる事を確認するため、 rails console を使用して事前にデータを作成。
 
 ```
 $ rails c
@@ -94,13 +94,13 @@ $ User.create(email:"hoge@email.com", first_name: "hoge", last_name:"fuga")
 $ User.create(email:"po@email.com", first_name: "po", last_name:"va")
 ```
 
-#### GraphQL の User Type を作成
+#### 3. GraphQL の User Type を作成
 
 ```
 $ rails g graphql:object User id:ID! first_name:String! last_name:String! email:String!
 ```
 
-#### Query のスキーマに resolver を定義
+#### 4. Query のスキーマに resolver を定義
 
 （Class Based Syntax で書く https://graphql-ruby.org/schema/class_based_api.html#classes）
 
@@ -125,3 +125,144 @@ module Types
 end
 
 ```
+
+#### 5. GraphiQL で動作確認
+
+（プロパティ名は、スネーク → キャメルになるっぽい？)
+
+```
+{
+  user(id:1) {
+    id
+    email
+    firstName
+    lastName
+  }
+}
+
+-----
+
+{
+  "data": {
+    "user": {
+      "id": "1",
+      "email": "hoge@email.com",
+      "firstName": "hoge",
+      "lastName": "fuga"
+    }
+  }
+}
+```
+
+```
+{
+  users {
+    id
+    email
+    firstName
+    lastName
+  }
+}
+
+-----
+
+{
+  "data": {
+    "users": [
+      {
+        "id": "1",
+        "email": "hoge@email.com",
+        "firstName": "hoge",
+        "lastName": "fuga"
+      },
+      {
+        "id": "2",
+        "email": "po@email.com",
+        "firstName": "po",
+        "lastName": "va"
+      }
+    ]
+  }
+}
+```
+
+## Mutation
+
+#### 1. User を update する mutation の boilerplate を generate
+
+```
+$ rails g graphql:mutation UpdateUser
+```
+
+#### 2. 生成されたファイル（app/graphql/mutation/update_user.rb）の中身にロジックを書く
+
+```
+module Mutations
+  class UpdateUser < GraphQL::Schema::RelayClassicMutation
+    graphql_name 'UpdateUser'
+
+    field :user, Types::UserType, null: true
+    field :result, Boolean, null: true
+
+    argument :id, ID, required: true
+    argument :email, String, required: false
+    argument :first_name, String, required: false
+    argument :last_name, String, required: false
+
+    def resolve(**args)
+      user = User.find(args[:id])
+      user.update(email: args[:email], first_name: args[:first_name], last_name: args[:last_name])
+      {
+        user: user,
+        result: user.errors.blank?
+      }
+    end
+  end
+end
+```
+
+#### 3. GraphiQL で動作確認
+
+```
+mutation {
+  updateUser(
+    input: {
+    	id: 1, 
+    	email: "hoooge@email.com", 
+    	firstName: "hoooge", 
+    	lastName: "fuga"
+    }
+  ) {
+    user {
+      id
+      email
+      firstName
+      lastName
+    }
+  }
+}
+
+-----
+
+{
+  "data": {
+    "updateUser": {
+      "user": {
+        "id": "1",
+        "email": "hoooge@email.com",
+        "firstName": "hoooge",
+        "lastName": "fuga"
+      }
+    }
+  }
+}
+```
+
+-----
+
+TODO:
+- アソシエーション
+- ...
+
+参考:
+- https://qiita.com/k-penguin-sato/items/07fef2f26fd6339e0e69
