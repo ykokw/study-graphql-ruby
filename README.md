@@ -1,24 +1,50 @@
-# README
+# STUDY-GRAPHQL-RUBY
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+see https://graphql-ruby.org/getting_started
 
-Things you may want to cover:
+### 1. Create new rails project
 
-* Ruby version
+```
+$ rails new study-graphql-ruby
+```
 
-* System dependencies
+### 2. Edit Gemfile (add graphql package)
 
-* Configuration
+You can install graphql from RubyGems by adding to your application’s Gemfile:
 
-* Database creation
+```
+gem "graphql"
+```
 
-* Database initialization
+- sqlite のバージョンを指定しないとエラーになる。 https://qiita.com/Kta-M/items/254a1ba141827a989cb7
 
-* How to run the test suite
 
-* Services (job queues, cache servers, search engines, etc.)
+```
+# gem 'sqlite3' # このままだとエラー
+gem 'sqlite3', '~> 1.3.6'
+```
 
-* Deployment instructions
+Then, running bundle install:
 
-* ...
+```
+$ bundle install
+```
+
+### 3. Generate graphql-ruby boilerplate
+
+On Rails, you can get started with a few GraphQL generators:
+
+(Add graphql-ruby boilerplate and mount graphiql in development)
+```
+$ rails g graphql:install
+$ bundle install    # <- Gemfile が更新されるので、もう一度 bundle install しておく 
+```
+
+```
+app/graphql
+├── graphql_ruby_demo_schema.rb
+├── mutations
+└── types
+    ├── mutation_type.rb
+    └── query_type.rb
+```
